@@ -1,35 +1,11 @@
-/*
- * Server side game module. Maintains the game state and processes all the messages from clients.
- *
- * Exports:
- *   - addPlayer(name)
- *   - move(direction, name)
- *   - state()
- */
-
 const { clamp, randomPoint, permutation } = require('./gameutil');
+const redis = require('redis').createClient();
 
 const WIDTH = 64;
 const HEIGHT = 64;
 const MAX_PLAYER_NAME_LENGTH = 32;
 const NUM_COINS = 100;
 
-
-// A KEY-VALUE "DATABASE" FOR THE GAME STATE.
-//
-// The game state is maintained in an object. Your homework assignment is to swap this out
-// for a Redis database.
-//
-// In this version, the players never die. For homework, you need to make a player die after
-// five minutes of inactivity. You can use the Redis TTL for this.
-//
-// Here is how the storage is laid out:
-//
-// player:<name>    string       "<row>,<col>"
-// scores           sorted set   playername with score
-// coins            hash         { "<row>,<col>": coinvalue }
-// usednames        set          all used names, to check quickly if a name has been used
-//
 const database = {
   scores: {},
   usednames: new Set(),
@@ -37,13 +13,20 @@ const database = {
 };
 
 exports.addPlayer = (name) => {
-  if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || database.usednames.has(name)) {
-    return false;
-  }
-  database.usednames.add(name);
-  database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
-  database.scores[name] = 0;
-  return true;
+  redis.sismember('usednames', name, function (err, reply) {
+    if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || reply) {
+      return false;
+    } else {
+      redis.sadd('usednames', name);
+      redis.hset('players', `player:${name}`, randomPoint(WIDTH, HEIGHT).toString());
+      redis.zadd('scores', 0, name);
+      return true;
+    }
+  });
+  // database.usednames.add(name);
+  // database[`player:${name}`] = randomPoint(WIDTH, HEIGHT).toString();
+  // database.scores[name] = 0;
+  // return true;
 };
 
 function placeCoins() {
@@ -90,5 +73,9 @@ exports.move = (direction, name) => {
     }
   }
 };
+
+redis.on('error', (err) => {
+  console.error('Error: ${err}');
+});
 
 placeCoins();
