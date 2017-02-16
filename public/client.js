@@ -35,10 +35,6 @@
     });
   }
 
-  // To draw the scoreboard, first remove all the table rows corresponding to scores
-  // (these are the <tr> elements with the `score` class). This leaves the rows with the
-  // table headers intact. Then iterate through the name-score pairs and add new rows to
-  // the table. We trust the server to send us the scores in the correct sorted order.
   function drawScores(gameState) {
     document.querySelectorAll('tr.score').forEach(e => e.remove());
     gameState.scores.forEach(([name, score]) => {
@@ -56,13 +52,10 @@
     drawScores(gameState);
   }
 
-  // When the join button is clicked, send the name to the server in a `name` message.
   document.querySelector('button').addEventListener('click', () => {
     socket.emit('name', document.querySelector('#name').value);
   });
 
-  // When an arrow key is pressed, send a `move` message with a single-character argument
-  // to the server.
   document.addEventListener('keydown', (e) => {
     const command = { 38: 'U', 40: 'D', 37: 'L', 39: 'R' }[e.keyCode];
     if (command) {
@@ -71,17 +64,14 @@
     }
   });
 
-  // When the server tells us the name is bad, render an error message.
   socket.on('badname', (name) => {
     document.querySelector('.error').innerHTML = `Name ${name} too short, too long, or taken`;
   });
 
-  // When the server sends us the `welcome` message, hide the lobby for and show the game board.
   socket.on('welcome', () => {
     document.querySelector('div#lobby').style.display = 'none';
     document.querySelector('div#game').style.display = 'block';
   });
 
-  // When the server sends us a `state` message, render the game state it sends us.
   socket.on('state', renderBoard);
 })();

@@ -1,9 +1,3 @@
-/*
- * Coin game server.
- *
- * This is the entry point for the Node.js application.
- */
-
 const express = require('express');
 
 const app = express();
@@ -11,19 +5,13 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const game = require('./server/game');
 
-// Images, scripts, stylesheets, and other assets will be in this directory.
 app.use(express.static('public'));
 
-// The client application lives on a single HTML page.
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/public/index.html`);
 });
 
 io.on('connection', (socket) => {
-  // When first connected, don't accept any messages except `name`. Keep accepting name
-  // messages until a name is accepted. When a name is finally accepted, send a `welcome`
-  // message and a the current game state, "turn off" the `name` message listener, then
-  // start accepting `move` messages.
   const nameListener = (name) => {
     const trimmedName = name.trim();
     game.addPlayer(trimmedName, (err, validName) => {

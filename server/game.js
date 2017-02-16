@@ -7,11 +7,10 @@ const MAX_PLAYER_NAME_LENGTH = 32;
 const NUM_COINS = 100;
 
 exports.addPlayer = (name, callback) => {
-  redis.sismember('usednames', name, (err, reply) => {
+  redis.hexists('players', name, (err, reply) => {
     if (name.length === 0 || name.length > MAX_PLAYER_NAME_LENGTH || reply) {
       return callback(null, false);
     }
-    redis.sadd('usednames', name);
     redis.hset('players', name, randomPoint(WIDTH, HEIGHT).toString());
     redis.zadd('scores', 0, name);
     return callback(null, true);
