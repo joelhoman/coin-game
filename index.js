@@ -26,22 +26,28 @@ io.on('connection', (socket) => {
   // start accepting `move` messages.
   const nameListener = (name) => {
     const trimmedName = name.trim();
-    if (game.addPlayer(trimmedName)) {
-      io.to(socket.id).emit('welcome');
-      io.emit('state', game.state());
-      socket.removeListener('name', nameListener);
-      socket.on('move', (direction) => {
-        game.move(direction, trimmedName);
-        io.emit('state', game.state());
-      });
-    } else {
-      io.to(socket.id).emit('badname', trimmedName);
-    }
+    game.addPlayer(trimmedName, (err, validName) => {
+      if (validName) {
+        io.to(socket.id).emit('welcome');
+        game.state((err2, state) => {
+          io.emit('state', state);
+        });
+        socket.removeListener('name', nameListener);
+        socket.on('move', (direction) => {
+          game.move(direction, trimmedName, () => {
+            game.state((err2, state) => {
+              io.emit('state', state);
+            });
+          });
+        });
+      } else {
+        io.to(socket.id).emit('badname', trimmedName);
+      }
+    });
   };
   socket.on('name', nameListener);
 });
 
-// It begins (https://xkcd.com/1656/)
 const port = process.env.PORT || 3000;
 http.listen(port, () => {
   console.log(`Server listening on port ${port}`);
