@@ -5,7 +5,7 @@ const WIDTH = 64;
 const HEIGHT = 64;
 const MAX_PLAYER_NAME_LENGTH = 32;
 const NUM_COINS = 100;
-const PLAYER_EXPIRE_TIME = 10;
+const PLAYER_EXPIRE_TIME = 300;
 
 exports.addPlayer = (name, callback) => {
   const storedName = `player:${name}`;
